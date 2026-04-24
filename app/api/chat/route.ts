@@ -1,23 +1,24 @@
 import { streamText } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
-
-const customOpenAI = createOpenAI({
-  // Vercel AI Gateway URL si existe, sino fallback a OpenAI normal
-  baseURL: process.env.AI_GATEWAY_URL || "https://api.openai.com/v1",
-});
 import { z } from "zod";
 import { readFileSync } from "fs";
 import { join } from "path";
+import { auth, clerkClient } from "@clerk/nextjs/server";
+import { google } from "googleapis";
+
+// Conexión directa a OpenAI (sin AI Gateway)
+const openai = createOpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
 // RAG: Leemos knowledge.txt al inicio del módulo (server-side only)
 let knowledgeBase = "";
 try {
-  knowledgeBase = readFileSync(
-    join(process.cwd(), "knowledge.txt"),
-    "utf-8"
-  );
+  knowledgeBase = readFileSync(join(process.cwd(), "knowledge.txt"), "utf-8");
 } catch {
-  console.warn("⚠️ knowledge.txt no encontrado, continuando sin base de conocimiento");
+  console.warn(
+    "⚠️ knowledge.txt no encontrado, continuando sin base de conocimiento"
+  );
 }
 
 const SYSTEM_PROMPT = `Eres NeuroCoach 🧠, un coach de hábitos inteligente basado estrictamente en ciencia conductual.
@@ -44,47 +45,121 @@ ${knowledgeBase}
 9. Si el usuario te saluda, preséntate brevemente y pregunta en qué hábito quiere trabajar
 
 ## HERRAMIENTAS
-- crearEvento: Usa esta herramienta cuando el usuario quiera agendar, programar, o recordar algo. Interpreta fechas relativas como "mañana", "el lunes", etc.
+- crearEvento: Usa esta herramienta cuando el usuario quiera agendar, programar, o recordar algo. Interpreta fechas relativas como "mañana", "el lunes", etc. El evento se creará en Google Calendar del usuario.
 - solicitarContrato: Usa esta herramienta cuando el usuario se comprometa a un nuevo hábito. Genera un Contrato de Identidad visual basado en el modelo "Después de [ancla], haré [hábito]" de Tiny Habits (BJ Fogg). SIEMPRE identifica el ancla y el hábito antes de invocarla.
 `;
 
 export async function POST(req: Request) {
   const { messages } = await req.json();
 
+  // Obtener auth de Clerk
+  const { userId } = await auth();
+
   const result = streamText({
-    model: customOpenAI("gpt-4o"),
+    model: openai("gpt-4o"),
     system: SYSTEM_PROMPT,
     messages,
     tools: {
       crearEvento: {
         description:
-          "Crea un evento o recordatorio en el calendario del usuario. Usa esta herramienta cuando el usuario quiera agendar, programar, o crear un recordatorio para algo.",
+          "Crea un evento REAL en Google Calendar del usuario. Usa esta herramienta cuando el usuario quiera agendar, programar, o crear un recordatorio para algo.",
         parameters: z.object({
           titulo: z
             .string()
-            .describe("Nombre descriptivo del evento (ej: 'Fútbol con amigos')"),
-          fecha: z
+            .describe(
+              "Nombre descriptivo del evento (ej: 'Fútbol con amigos')"
+            ),
+          fechaHoraInicio: z
             .string()
             .describe(
-              "Fecha del evento en formato legible en español (ej: 'Viernes, 25 de abril')"
+              "Fecha y hora de inicio en formato ISO 8601 (ej: '2025-04-25T17:00:00')"
             ),
-          hora: z
-            .string()
-            .describe("Hora o rango horario del evento (ej: '17:00 - 18:30')"),
-          ubicacion: z
-            .string()
-            .optional()
-            .describe("Ubicación del evento si se menciona"),
+          duracionMinutos: z
+            .number()
+            .describe("Duración del evento en minutos (ej: 60 para 1 hora)"),
         }),
-        execute: async ({ titulo, fecha, hora, ubicacion }) => {
-          return {
-            titulo,
-            fecha,
-            hora,
-            ubicacion: ubicacion || undefined,
-            estado: "pendiente",
-            creadoEn: new Date().toISOString(),
-          };
+        execute: async ({ titulo, fechaHoraInicio, duracionMinutos }) => {
+          // Si no hay usuario autenticado, devolver error
+          if (!userId) {
+            return {
+              success: false,
+              error: "Usuario no autenticado",
+              titulo,
+            };
+          }
+
+          try {
+            // Obtener el token de Google OAuth del usuario via Clerk
+            const clerk = await clerkClient();
+            const tokenResponse = await clerk.users.getUserOauthAccessToken(
+              userId,
+              "google"
+            );
+
+            const googleToken = tokenResponse.data[0]?.token;
+
+            if (!googleToken) {
+              return {
+                success: false,
+                error: "No se encontró conexión con Google Calendar. Por favor vincula tu cuenta de Google.",
+                titulo,
+              };
+            }
+
+            // Configurar cliente de Google Calendar
+            const oauth2Client = new google.auth.OAuth2();
+            oauth2Client.setCredentials({ access_token: googleToken });
+
+            const calendar = google.calendar({
+              version: "v3",
+              auth: oauth2Client,
+            });
+
+            // Calcular fecha de fin
+            const startDate = new Date(fechaHoraInicio);
+            const endDate = new Date(
+              startDate.getTime() + duracionMinutos * 60 * 1000
+            );
+
+            // Crear el evento en Google Calendar
+            const event = await calendar.events.insert({
+              calendarId: "primary",
+              requestBody: {
+                summary: titulo,
+                start: {
+                  dateTime: startDate.toISOString(),
+                  timeZone: "America/Mexico_City",
+                },
+                end: {
+                  dateTime: endDate.toISOString(),
+                  timeZone: "America/Mexico_City",
+                },
+                reminders: {
+                  useDefault: false,
+                  overrides: [
+                    { method: "popup", minutes: 30 },
+                    { method: "email", minutes: 60 },
+                  ],
+                },
+              },
+            });
+
+            return {
+              success: true,
+              titulo,
+              link: event.data.htmlLink || "",
+              eventId: event.data.id,
+              fechaHoraInicio,
+              duracionMinutos,
+            };
+          } catch (error) {
+            console.error("Error creando evento en Google Calendar:", error);
+            return {
+              success: false,
+              error: "Error al crear el evento en Google Calendar",
+              titulo,
+            };
+          }
         },
       },
 

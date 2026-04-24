@@ -106,10 +106,12 @@ export function ChatArea({ messages, isLoading }: ChatAreaProps) {
                       return (
                         <div key={toolInvocation.toolCallId} className="max-w-[85%]">
                           <CalendarCard
-                            title={data.titulo}
-                            date={data.fecha}
-                            time={data.hora}
-                            location={data.ubicacion}
+                            titulo={data.titulo}
+                            fechaHoraInicio={data.fechaHoraInicio}
+                            duracionMinutos={data.duracionMinutos}
+                            link={data.link}
+                            success={data.success}
+                            error={data.error}
                           />
                         </div>
                       )

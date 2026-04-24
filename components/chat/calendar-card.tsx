@@ -1,36 +1,69 @@
 "use client"
 
-import { useState } from "react"
-import { Calendar, Clock, MapPin, Check, X } from "lucide-react"
+import { Calendar, Clock, ExternalLink, Check, AlertCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface CalendarCardProps {
-  title: string
-  date: string
-  time: string
+  titulo: string
+  fechaHoraInicio?: string
+  duracionMinutos?: number
+  link?: string
+  success?: boolean
+  error?: string
+  // Legacy props for backwards compatibility
+  date?: string
+  time?: string
   location?: string
-  onConfirm?: () => void
-  onCancel?: () => void
 }
 
 export function CalendarCard({
-  title,
+  titulo,
+  fechaHoraInicio,
+  duracionMinutos,
+  link,
+  success = true,
+  error,
+  // Legacy props
   date,
   time,
-  location,
-  onConfirm,
-  onCancel,
 }: CalendarCardProps) {
-  const [status, setStatus] = useState<"pending" | "confirmed" | "cancelled">("pending")
-
-  const handleConfirm = () => {
-    setStatus("confirmed")
-    onConfirm?.()
+  // Format date and time from ISO string
+  const formatDateTime = (isoString?: string) => {
+    if (!isoString) return { fecha: date || "", hora: time || "" }
+    
+    const dateObj = new Date(isoString)
+    const fecha = dateObj.toLocaleDateString("es-ES", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    })
+    const hora = dateObj.toLocaleTimeString("es-ES", {
+      hour: "2-digit",
+      minute: "2-digit",
+    })
+    
+    return { fecha, hora }
   }
 
-  const handleCancel = () => {
-    setStatus("cancelled")
-    onCancel?.()
+  const { fecha, hora } = formatDateTime(fechaHoraInicio)
+
+  // Error state
+  if (!success || error) {
+    return (
+      <div className="overflow-hidden rounded-xl border border-red-200 bg-white shadow-sm">
+        <div className="flex items-center gap-2 bg-gradient-to-r from-red-500 to-red-600 px-4 py-2.5">
+          <AlertCircle className="h-4 w-4 text-white" />
+          <span className="text-sm font-medium text-white">Error de Calendario</span>
+        </div>
+        <div className="p-4">
+          <h4 className="text-base font-semibold text-gray-900">{titulo}</h4>
+          <p className="mt-2 text-sm text-red-600">
+            {error || "No se pudo crear el evento. Verifica tu conexión con Google Calendar."}
+          </p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -39,66 +72,52 @@ export function CalendarCard({
       <div className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-blue-600 px-4 py-2.5">
         <Calendar className="h-4 w-4 text-white" />
         <span className="text-sm font-medium text-white">Google Calendar</span>
+        <div className="ml-auto flex items-center gap-1 rounded-full bg-white/20 px-2 py-0.5">
+          <Check className="h-3 w-3 text-white" />
+          <span className="text-xs text-white">Creado</span>
+        </div>
       </div>
 
       {/* Event Details */}
       <div className="p-4">
-        <h4 className="text-base font-semibold text-gray-900">{title}</h4>
+        <h4 className="text-base font-semibold text-gray-900">{titulo}</h4>
         
         <div className="mt-3 space-y-2">
           <div className="flex items-center gap-2 text-sm text-gray-600">
             <Calendar className="h-4 w-4 text-gray-400" />
-            <span>{date}</span>
+            <span className="capitalize">{fecha}</span>
           </div>
           <div className="flex items-center gap-2 text-sm text-gray-600">
             <Clock className="h-4 w-4 text-gray-400" />
-            <span>{time}</span>
+            <span>
+              {hora}
+              {duracionMinutos && ` (${duracionMinutos} min)`}
+            </span>
           </div>
-          {location && (
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <MapPin className="h-4 w-4 text-gray-400" />
-              <span>{location}</span>
-            </div>
-          )}
         </div>
 
-        {/* Status or Actions */}
-        {status === "pending" ? (
-          <div className="mt-4 flex gap-2">
-            <button
-              onClick={handleConfirm}
-              className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
-            >
-              <Check className="h-4 w-4" />
-              Confirmar
-            </button>
-            <button
-              onClick={handleCancel}
-              className="flex items-center justify-center gap-1.5 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        ) : (
-          <div
+        {/* Action Button */}
+        {link && (
+          <a
+            href={link}
+            target="_blank"
+            rel="noopener noreferrer"
             className={cn(
-              "mt-4 flex items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium",
-              status === "confirmed"
-                ? "bg-green-100 text-green-700"
-                : "bg-gray-100 text-gray-500"
+              "mt-4 flex w-full items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-medium transition-all",
+              "bg-gradient-to-r from-blue-500 to-blue-600 text-white",
+              "hover:from-blue-600 hover:to-blue-700 hover:shadow-md",
+              "active:scale-[0.98]"
             )}
           >
-            {status === "confirmed" ? (
-              <>
-                <Check className="h-4 w-4" />
-                Evento confirmado
-              </>
-            ) : (
-              <>
-                <X className="h-4 w-4" />
-                Evento cancelado
-              </>
-            )}
+            <ExternalLink className="h-4 w-4" />
+            Abrir en Google Calendar
+          </a>
+        )}
+
+        {!link && (
+          <div className="mt-4 flex items-center justify-center gap-2 rounded-lg bg-green-50 border border-green-200 py-2.5 text-sm font-medium text-green-700">
+            <Check className="h-4 w-4" />
+            Evento agregado a tu calendario
           </div>
         )}
       </div>
