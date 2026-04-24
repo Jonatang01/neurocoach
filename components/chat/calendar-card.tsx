@@ -10,6 +10,7 @@ interface CalendarCardProps {
   link?: string
   success?: boolean
   error?: string
+  demo?: boolean
   // Legacy props for backwards compatibility
   date?: string
   time?: string
@@ -23,6 +24,7 @@ export function CalendarCard({
   link,
   success = true,
   error,
+  demo = false,
   // Legacy props
   date,
   time,
@@ -69,12 +71,19 @@ export function CalendarCard({
   return (
     <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
       {/* Google Calendar Style Header */}
-      <div className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-blue-600 px-4 py-2.5">
+      <div className={cn(
+        "flex items-center gap-2 px-4 py-2.5",
+        demo 
+          ? "bg-gradient-to-r from-amber-500 to-orange-500" 
+          : "bg-gradient-to-r from-blue-500 to-blue-600"
+      )}>
         <Calendar className="h-4 w-4 text-white" />
-        <span className="text-sm font-medium text-white">Google Calendar</span>
+        <span className="text-sm font-medium text-white">
+          {demo ? "Modo Demo" : "Google Calendar"}
+        </span>
         <div className="ml-auto flex items-center gap-1 rounded-full bg-white/20 px-2 py-0.5">
           <Check className="h-3 w-3 text-white" />
-          <span className="text-xs text-white">Creado</span>
+          <span className="text-xs text-white">{demo ? "Vista previa" : "Creado"}</span>
         </div>
       </div>
 
@@ -115,9 +124,14 @@ export function CalendarCard({
         )}
 
         {!link && (
-          <div className="mt-4 flex items-center justify-center gap-2 rounded-lg bg-green-50 border border-green-200 py-2.5 text-sm font-medium text-green-700">
+          <div className={cn(
+            "mt-4 flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-medium",
+            demo 
+              ? "bg-amber-50 border border-amber-200 text-amber-700"
+              : "bg-green-50 border border-green-200 text-green-700"
+          )}>
             <Check className="h-4 w-4" />
-            Evento agregado a tu calendario
+            {demo ? "Configura Clerk para crear eventos reales" : "Evento agregado a tu calendario"}
           </div>
         )}
       </div>

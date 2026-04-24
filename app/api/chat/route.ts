@@ -2,8 +2,21 @@ import { streamText } from "ai";
 import { z } from "zod";
 import { readFileSync } from "fs";
 import { join } from "path";
-import { auth, clerkClient } from "@clerk/nextjs/server";
-import { google } from "googleapis";
+
+// Clerk y Google Calendar son opcionales - modo demo si no están configurados
+let auth: any = null;
+let clerkClient: any = null;
+let google: any = null;
+
+try {
+  const clerk = require("@clerk/nextjs/server");
+  auth = clerk.auth;
+  clerkClient = clerk.clerkClient;
+  const googleapis = require("googleapis");
+  google = googleapis.google;
+} catch {
+  console.log("[NeuroCoach] Modo demo: Clerk/Google Calendar no configurados");
+}
 
 // RAG: Leemos knowledge.txt al inicio del módulo (server-side only)
 let knowledgeBase = "";
@@ -46,8 +59,16 @@ ${knowledgeBase}
 export async function POST(req: Request) {
   const { messages } = await req.json();
 
-  // Obtener auth de Clerk
-  const { userId } = await auth();
+  // Obtener auth de Clerk (null si no está configurado)
+  let userId: string | null = null;
+  if (auth) {
+    try {
+      const authResult = await auth();
+      userId = authResult?.userId || null;
+    } catch {
+      console.log("[NeuroCoach] Clerk no configurado, usando modo demo");
+    }
+  }
 
   const result = streamText({
     // Vercel AI Gateway - modelo string directo, sin provider package
@@ -74,12 +95,16 @@ export async function POST(req: Request) {
             .describe("Duración del evento en minutos (ej: 60 para 1 hora)"),
         }),
         execute: async ({ titulo, fechaHoraInicio, duracionMinutos }) => {
-          // Si no hay usuario autenticado, devolver error
-          if (!userId) {
+          // MODO DEMO: Si Clerk no está configurado, devolver evento simulado
+          if (!clerkClient || !google || !userId) {
             return {
-              success: false,
-              error: "Usuario no autenticado",
+              success: true,
+              demo: true,
               titulo,
+              fechaHoraInicio,
+              duracionMinutos,
+              link: "",
+              message: "Modo demo: El evento se mostraria aqui (configura Clerk para crear eventos reales)",
             };
           }
 

@@ -112,6 +112,7 @@ export function ChatArea({ messages, isLoading }: ChatAreaProps) {
                             link={data.link}
                             success={data.success}
                             error={data.error}
+                            demo={data.demo}
                           />
                         </div>
                       )
