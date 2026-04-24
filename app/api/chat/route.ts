@@ -1,4 +1,4 @@
-import { streamText, convertToCoreMessages } from "ai";
+import { streamText, convertToModelMessages } from "ai";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 
 const customGoogle = createGoogleGenerativeAI({
@@ -54,7 +54,7 @@ export async function POST(req: Request) {
   const result = streamText({
     model: customGoogle("gemini-1.5-pro"),
     system: SYSTEM_PROMPT,
-    messages: convertToCoreMessages(messages),
+    messages: convertToModelMessages(messages),
     tools: {
       crearEvento: {
         description:
