@@ -1,9 +1,9 @@
 import { streamText } from "ai";
-import { createOpenAI } from "@ai-sdk/openai";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
 
-const customOpenAI = createOpenAI({
-  // Vercel AI Gateway URL si existe, sino fallback a OpenAI normal
-  baseURL: process.env.AI_GATEWAY_URL || "https://api.openai.com/v1",
+const customGoogle = createGoogleGenerativeAI({
+  // Vercel AI Gateway URL si existe, sino fallback a Google normal
+  baseURL: process.env.AI_GATEWAY_URL || "https://generativelanguage.googleapis.com/v1beta",
 });
 import { z } from "zod";
 import { readFileSync } from "fs";
@@ -52,7 +52,7 @@ export async function POST(req: Request) {
   const { messages } = await req.json();
 
   const result = streamText({
-    model: customOpenAI("gpt-4o"),
+    model: customGoogle("gemini-1.5-pro"),
     system: SYSTEM_PROMPT,
     messages,
     tools: {
