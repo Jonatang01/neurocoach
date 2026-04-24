@@ -1,4 +1,4 @@
-import { streamText } from "ai";
+import { streamText, convertToModelMessages } from "ai";
 import { z } from "zod";
 import { readFileSync } from "fs";
 import { join } from "path";
@@ -70,11 +70,14 @@ export async function POST(req: Request) {
     }
   }
 
+  // Convertir UIMessages (con parts) a ModelMessages (con content)
+  const modelMessages = await convertToModelMessages(messages);
+
   const result = streamText({
     // Vercel AI Gateway - modelo string directo, sin provider package
     model: "openai/gpt-4o",
     system: SYSTEM_PROMPT,
-    messages,
+    messages: modelMessages,
     tools: {
       crearEvento: {
         description:
