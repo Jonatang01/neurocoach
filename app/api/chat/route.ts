@@ -1,15 +1,9 @@
 import { streamText } from "ai";
-import { createOpenAI } from "@ai-sdk/openai";
 import { z } from "zod";
 import { readFileSync } from "fs";
 import { join } from "path";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { google } from "googleapis";
-
-// Conexión directa a OpenAI (sin AI Gateway)
-const openai = createOpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
 
 // RAG: Leemos knowledge.txt al inicio del módulo (server-side only)
 let knowledgeBase = "";
@@ -56,7 +50,8 @@ export async function POST(req: Request) {
   const { userId } = await auth();
 
   const result = streamText({
-    model: openai("gpt-4o"),
+    // Vercel AI Gateway - modelo string directo, sin provider package
+    model: "openai/gpt-4o",
     system: SYSTEM_PROMPT,
     messages,
     tools: {
