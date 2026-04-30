@@ -81,7 +81,7 @@ export async function POST(req: Request) {
 
   const result = streamText({
     // Google Gemini - conexion directa con API key
-    model: google_ai("gemini-1.5-flash"),
+    model: google_ai("gemini-2.5-flash"),
     system: SYSTEM_PROMPT,
     messages: modelMessages,
     tools: {
