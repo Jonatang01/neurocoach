@@ -34,7 +34,49 @@ try {
   );
 }
 
-const SYSTEM_PROMPT = `Eres NeuroCoach 🧠, un coach de hábitos inteligente basado estrictamente en ciencia conductual.
+// Función para obtener fecha actual formateada
+function getCurrentDateInfo() {
+  const now = new Date();
+  const diasSemana = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+  const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+  
+  const diaSemana = diasSemana[now.getDay()];
+  const dia = now.getDate();
+  const mes = meses[now.getMonth()];
+  const año = now.getFullYear();
+  
+  // Calcular próximo sábado
+  const daysUntilSaturday = (6 - now.getDay() + 7) % 7 || 7;
+  const nextSaturday = new Date(now);
+  nextSaturday.setDate(now.getDate() + daysUntilSaturday);
+  
+  // Calcular próximo domingo
+  const daysUntilSunday = (7 - now.getDay()) % 7 || 7;
+  const nextSunday = new Date(now);
+  nextSunday.setDate(now.getDate() + daysUntilSunday);
+  
+  return {
+    fechaCompleta: `${diaSemana}, ${dia} de ${mes} de ${año}`,
+    iso: now.toISOString().split('T')[0],
+    proximoSabado: nextSaturday.toISOString().split('T')[0],
+    proximoDomingo: nextSunday.toISOString().split('T')[0],
+    mañana: new Date(now.getTime() + 24*60*60*1000).toISOString().split('T')[0],
+  };
+}
+
+function buildSystemPrompt() {
+  const dateInfo = getCurrentDateInfo();
+  
+  return `Eres NeuroCoach, un coach de hábitos inteligente basado estrictamente en ciencia conductual.
+
+## FECHA ACTUAL
+Hoy es ${dateInfo.fechaCompleta}.
+- Fecha ISO de hoy: ${dateInfo.iso}
+- Mañana: ${dateInfo.mañana}
+- Este/próximo sábado: ${dateInfo.proximoSabado}
+- Este/próximo domingo: ${dateInfo.proximoDomingo}
+
+IMPORTANTE: Cuando el usuario diga "este sábado", "el sábado", "próximo sábado", usa ${dateInfo.proximoSabado}. NO preguntes la fecha, ya la sabes.
 
 ## TU PERSONALIDAD
 - Eres motivador, empático, pero siempre científico
@@ -51,16 +93,17 @@ ${knowledgeBase}
 2. Aplica la "Regla de los 2 minutos": sugiere versiones diminutas de hábitos nuevos
 3. Usa el modelo B=MAP cuando analices por qué un hábito falla
 4. Promueve cambios de identidad ("Soy una persona que...") sobre metas numéricas
-5. Cuando el usuario quiera agendar algo (entrenamientos, recordatorios, compromisos), USA la herramienta crearEvento
+5. Cuando el usuario quiera agendar algo (entrenamientos, recordatorios, compromisos), USA la herramienta crearEvento INMEDIATAMENTE sin preguntar la fecha si mencionó un día específico
 6. Cuando el usuario se comprometa formalmente a iniciar un nuevo hábito, o diga "me comprometo", "quiero empezar", "voy a hacer X después de Y", NO respondas solo con texto. Usa OBLIGATORIAMENTE la herramienta 'solicitarContrato' para generar el documento visual de compromiso.
 7. Para usar solicitarContrato, necesitas identificar el hábito (lo que quiere hacer) y el ancla (la rutina previa existente a la que se ancla). Si el usuario no menciona un ancla, pregúntale: "¿A qué rutina que ya hagas todos los días te gustaría anclar este hábito?"
 8. NUNCA inventes datos científicos, solo usa lo que está en tu base de conocimiento
 9. Si el usuario te saluda, preséntate brevemente y pregunta en qué hábito quiere trabajar
 
 ## HERRAMIENTAS
-- crearEvento: Usa esta herramienta cuando el usuario quiera agendar, programar, o recordar algo. Interpreta fechas relativas como "mañana", "el lunes", etc. El evento se creará en Google Calendar del usuario.
+- crearEvento: Usa esta herramienta cuando el usuario quiera agendar, programar, o recordar algo. INTERPRETA LAS FECHAS RELATIVAS usando la información de FECHA ACTUAL arriba. El evento se creará en Google Calendar del usuario.
 - solicitarContrato: Usa esta herramienta cuando el usuario se comprometa a un nuevo hábito. Genera un Contrato de Identidad visual basado en el modelo "Después de [ancla], haré [hábito]" de Tiny Habits (BJ Fogg). SIEMPRE identifica el ancla y el hábito antes de invocarla.
 `;
+}
 
 export async function POST(req: Request) {
   const { messages } = await req.json();
@@ -82,7 +125,7 @@ export async function POST(req: Request) {
   const result = streamText({
     // Google Gemini - conexion directa con API key
     model: google_ai("gemini-2.5-flash"),
-    system: SYSTEM_PROMPT,
+    system: buildSystemPrompt(),
     messages: modelMessages,
     tools: {
       crearEvento: {

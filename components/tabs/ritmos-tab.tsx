@@ -1,113 +1,95 @@
 "use client"
 
-import { Check, Flame, Droplets, Moon, Dumbbell, BookOpen } from "lucide-react"
+import { Check, Flame, Droplets, Moon, Dumbbell, BookOpen, Trash2 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useNeuroCoach } from "@/lib/neurocoach-context"
 
-interface Habit {
-  id: string
-  name: string
-  icon: React.ReactNode
-  streak: number
-  completedToday: boolean
-  color: string
+// Icon map for dynamic rendering
+const iconMap: Record<string, React.ReactNode> = {
+  Flame: <Flame className="h-5 w-5" />,
+  Droplets: <Droplets className="h-5 w-5" />,
+  Moon: <Moon className="h-5 w-5" />,
+  Dumbbell: <Dumbbell className="h-5 w-5" />,
+  BookOpen: <BookOpen className="h-5 w-5" />,
 }
 
-const habits: Habit[] = [
-  {
-    id: "1",
-    name: "Meditación matutina",
-    icon: <Flame className="h-5 w-5" />,
-    streak: 12,
-    completedToday: true,
-    color: "bg-orange-500",
-  },
-  {
-    id: "2",
-    name: "Beber 2L de agua",
-    icon: <Droplets className="h-5 w-5" />,
-    streak: 8,
-    completedToday: true,
-    color: "bg-blue-500",
-  },
-  {
-    id: "3",
-    name: "Dormir 8 horas",
-    icon: <Moon className="h-5 w-5" />,
-    streak: 5,
-    completedToday: false,
-    color: "bg-purple-500",
-  },
-  {
-    id: "4",
-    name: "Ejercicio 30 min",
-    icon: <Dumbbell className="h-5 w-5" />,
-    streak: 15,
-    completedToday: false,
-    color: "bg-green-500",
-  },
-  {
-    id: "5",
-    name: "Leer 20 páginas",
-    icon: <BookOpen className="h-5 w-5" />,
-    streak: 3,
-    completedToday: false,
-    color: "bg-amber-500",
-  },
-]
-
 export function RitmosTab() {
+  const { habits, toggleHabitCompletion, removeHabit, getCompletedTodayCount } = useNeuroCoach()
+  
+  const completedCount = getCompletedTodayCount()
+
   return (
     <div className="flex-1 overflow-y-auto px-4 py-4">
       <div className="mx-auto max-w-lg space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-gray-900">Mis Ritmos</h2>
-          <span className="text-sm text-gray-500">2/5 completados hoy</span>
+          <span className="text-sm text-gray-500">{completedCount}/{habits.length} completados hoy</span>
         </div>
 
-        <div className="space-y-3">
-          {habits.map((habit) => (
-            <div
-              key={habit.id}
-              className={cn(
-                "flex items-center gap-4 rounded-xl border bg-white p-4 shadow-sm transition-all",
-                habit.completedToday
-                  ? "border-green-200 bg-green-50/50"
-                  : "border-gray-200"
-              )}
-            >
+        {habits.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-8 text-center">
+            <p className="text-gray-500">No tienes ritmos configurados.</p>
+            <p className="mt-1 text-sm text-gray-400">
+              Habla con NeuroCoach para crear tu primer hábito.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {habits.map((habit) => (
               <div
+                key={habit.id}
                 className={cn(
-                  "flex h-12 w-12 items-center justify-center rounded-full text-white",
-                  habit.color
-                )}
-              >
-                {habit.icon}
-              </div>
-
-              <div className="flex-1">
-                <h3 className="font-medium text-gray-900">{habit.name}</h3>
-                <p className="text-sm text-gray-500">
-                  Racha: {habit.streak} días
-                </p>
-              </div>
-
-              <button
-                className={cn(
-                  "flex h-10 w-10 items-center justify-center rounded-full border-2 transition-all",
+                  "flex items-center gap-4 rounded-xl border bg-white p-4 shadow-sm transition-all",
                   habit.completedToday
-                    ? "border-green-500 bg-green-500 text-white"
-                    : "border-gray-300 text-gray-300 hover:border-indigo-400 hover:text-indigo-400"
+                    ? "border-green-200 bg-green-50/50"
+                    : "border-gray-200"
                 )}
               >
-                <Check className="h-5 w-5" />
-              </button>
-            </div>
-          ))}
-        </div>
+                <div
+                  className={cn(
+                    "flex h-12 w-12 items-center justify-center rounded-full text-white",
+                    habit.color
+                  )}
+                >
+                  {iconMap[habit.icon] || <Flame className="h-5 w-5" />}
+                </div>
 
-        <button className="w-full rounded-xl border-2 border-dashed border-gray-300 py-4 text-sm font-medium text-gray-500 transition-colors hover:border-indigo-400 hover:text-indigo-600">
-          + Agregar nuevo ritmo
-        </button>
+                <div className="flex-1">
+                  <h3 className="font-medium text-gray-900">{habit.name}</h3>
+                  <p className="text-sm text-gray-500">
+                    Racha: {habit.streak} días
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => removeHabit(habit.id)}
+                  className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                  aria-label="Eliminar hábito"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+
+                <button
+                  onClick={() => toggleHabitCompletion(habit.id)}
+                  className={cn(
+                    "flex h-10 w-10 items-center justify-center rounded-full border-2 transition-all",
+                    habit.completedToday
+                      ? "border-green-500 bg-green-500 text-white"
+                      : "border-gray-300 text-gray-300 hover:border-indigo-400 hover:text-indigo-400"
+                  )}
+                >
+                  <Check className="h-5 w-5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-4">
+          <p className="text-sm text-indigo-700">
+            <span className="font-medium">Tip:</span> Dile a NeuroCoach &quot;Me comprometo a [hábito] después de [rutina]&quot; para crear un nuevo ritmo con contrato.
+          </p>
+        </div>
       </div>
     </div>
   )
