@@ -1,7 +1,13 @@
 import { streamText, convertToModelMessages } from "ai";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { z } from "zod";
 import { readFileSync } from "fs";
 import { join } from "path";
+
+// Configurar Google Gemini con API key
+const google_ai = createGoogleGenerativeAI({
+  apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY || "",
+});
 
 // Clerk y Google Calendar son opcionales - modo demo si no están configurados
 let auth: any = null;
@@ -74,8 +80,8 @@ export async function POST(req: Request) {
   const modelMessages = await convertToModelMessages(messages);
 
   const result = streamText({
-    // Vercel AI Gateway - modelo string directo, sin provider package
-    model: "openai/gpt-4o",
+    // Google Gemini - conexion directa con API key
+    model: google_ai("gemini-2.0-flash"),
     system: SYSTEM_PROMPT,
     messages: modelMessages,
     tools: {
