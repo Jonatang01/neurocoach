@@ -119,12 +119,12 @@ export function HabitContract({ habito, ancla }: HabitContractProps) {
             {signing ? (
               <>
                 <div className="h-4 w-4 animate-spin rounded-full border-2 border-indigo-300 border-t-indigo-600" />
-                Firmando y activando seguimiento...
+                Activar Seguimiento WDK (24hs)...
               </>
             ) : (
               <>
                 <FileSignature className="h-4 w-4" />
-                Firmar y Activar Seguimiento
+                Activar Seguimiento WDK (24hs)
               </>
             )}
           </button>
@@ -134,10 +134,10 @@ export function HabitContract({ habito, ancla }: HabitContractProps) {
               <div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500">
                 <Check className="h-3 w-3 text-white" />
               </div>
-              Contrato firmado — Seguimiento activo
+              Contrato firmado — Workflow Durable (WDK) activo
             </div>
             <p className="text-center text-xs text-gray-400">
-              NeuroCoach te recordará en 24h para verificar tu progreso 🔔
+              El agente te contactará mañana sin consumir recursos en tu dispositivo 🔔
             </p>
           </div>
         )}

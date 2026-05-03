@@ -27,36 +27,42 @@ export function ChatArea({ messages, isLoading }: ChatAreaProps) {
       <div className="mx-auto flex max-w-lg flex-col gap-3">
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
-            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-indigo-100">
+            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-900">
               <span className="text-3xl">🧠</span>
             </div>
-            <h2 className="text-lg font-semibold text-gray-900">
-              ¡Bienvenido a NeuroCoach!
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+              NeuroCoach: Tu espacio seguro para construir hábitos
             </h2>
-            <p className="mt-2 text-sm text-gray-500">
-              Tu coach personal de hábitos está listo para ayudarte.
+            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+              Basado en la ciencia conductual de James Clear y BJ Fogg.
               <br />
-              Cuéntame, ¿qué hábito te gustaría desarrollar?
+              Elige una sugerencia o cuéntame tu desafío de hoy.
             </p>
 
-            {/* Quick action chips */}
-            <div className="mt-6 flex flex-wrap justify-center gap-2">
+            {/* Quick Suggestion Cards */}
+            <div className="mt-8 w-full space-y-2">
               {[
-                "Quiero meditar cada mañana",
-                "Agendame ejercicio mañana a las 7am",
-                "Me comprometo a leer después de cenar",
-              ].map((suggestion) => (
+                { emoji: "💼", label: "Burnout Laboral", desc: "Recupera tu energía" },
+                { emoji: "⚡", label: "Falta de Constancia", desc: "Crea ritmos sostenibles" },
+                { emoji: "😰", label: "Estrés y Ansiedad", desc: "Técnicas basadas en neurociencia" },
+              ].map((card) => (
                 <button
-                  key={suggestion}
-                  className="rounded-full border border-indigo-200 bg-white px-3 py-1.5 text-xs text-indigo-600 shadow-sm transition-all hover:bg-indigo-50 hover:shadow"
+                  key={card.label}
                   onClick={() => {
                     const event = new CustomEvent("neurocoach:suggest", {
-                      detail: suggestion,
+                      detail: card.label,
                     })
                     window.dispatchEvent(event)
                   }}
+                  className="w-full rounded-lg border-2 border-indigo-200 bg-white p-3 text-left transition-all hover:border-indigo-400 hover:bg-indigo-50 dark:border-indigo-900 dark:bg-slate-800 dark:hover:border-indigo-600 dark:hover:bg-slate-700"
                 >
-                  {suggestion}
+                  <div className="flex items-start gap-3">
+                    <span className="text-xl">{card.emoji}</span>
+                    <div>
+                      <p className="font-semibold text-gray-900 dark:text-white">{card.label}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{card.desc}</p>
+                    </div>
+                  </div>
                 </button>
               ))}
             </div>
