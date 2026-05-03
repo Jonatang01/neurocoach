@@ -46,7 +46,6 @@ interface NeuroCoachContextType extends NeuroCoachState {
   addHabit: (habit: Omit<Habit, "id" | "streak" | "completedToday" | "completedDates" | "createdAt">) => void
   toggleHabitCompletion: (habitId: string) => void
   removeHabit: (habitId: string) => void
-  reorderHabits: (activeId: string, overId: string) => void
   
   // Event actions
   addEvent: (event: Omit<ScheduledEvent, "id" | "completed">) => void
@@ -188,20 +187,6 @@ export function NeuroCoachProvider({ children }: { children: ReactNode }) {
     setHabits(prev => prev.filter(h => h.id !== habitId))
   }, [])
 
-  const reorderHabits = useCallback((activeId: string, overId: string) => {
-    setHabits(prev => {
-      const oldIndex = prev.findIndex(h => h.id === activeId)
-      const newIndex = prev.findIndex(h => h.id === overId)
-      
-      if (oldIndex === -1 || newIndex === -1) return prev
-      
-      const newHabits = [...prev]
-      const [removed] = newHabits.splice(oldIndex, 1)
-      newHabits.splice(newIndex, 0, removed)
-      return newHabits
-    })
-  }, [])
-
   // Event actions
   const addEvent = useCallback((eventData: Omit<ScheduledEvent, "id" | "completed">) => {
     const newEvent: ScheduledEvent = {
@@ -273,7 +258,6 @@ export function NeuroCoachProvider({ children }: { children: ReactNode }) {
     addHabit,
     toggleHabitCompletion,
     removeHabit,
-    reorderHabits,
     addEvent,
     toggleEventCompletion,
     removeEvent,

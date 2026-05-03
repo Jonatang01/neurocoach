@@ -26,69 +26,43 @@ function NeuroCoachContent() {
     setInput("")
   }
 
-  // Track processed tool calls to avoid duplicates
-  const [processedToolCalls, setProcessedToolCalls] = useState<Set<string>>(new Set())
-
   // Listen for tool results in messages to update global state
-  // AI SDK 6 uses tool-{toolName} pattern for parts (e.g., tool-crearEvento)
   useEffect(() => {
-    if (!messages.length) return
+    const lastMessage = messages[messages.length - 1]
+    if (!lastMessage || lastMessage.role !== "assistant") return
 
-    // Scan all messages for tool parts
-    for (const message of messages) {
-      if (message.role !== "assistant" || !message.parts) continue
+    // Check for tool invocations in parts
+    if (lastMessage.parts) {
+      for (const part of lastMessage.parts) {
+        if (part.type === "tool-invocation" && part.state === "output-available") {
+          const toolName = part.toolInvocation?.toolName
+          const result = part.toolInvocation?.result
 
-      for (const part of message.parts as any[]) {
-        // AI SDK 6 tool parts use "tool-{toolName}" type pattern
-        const partType = part.type as string
-        
-        // Log all parts for debugging
-        if (partType.startsWith("tool-")) {
-          console.log("[v0] Tool part found:", { type: partType, state: part.state, part })
-        }
-
-        // Handle crearEvento tool
-        if (partType === "tool-crearEvento" && part.state === "output-available") {
-          const toolCallId = part.toolCallId
-          if (!toolCallId || processedToolCalls.has(toolCallId)) continue
-
-          const output = part.output
-          console.log("[v0] crearEvento output:", output)
-
-          if (output?.success) {
+          if (toolName === "crearEvento" && result?.success) {
+            // Add event to global state
             addEvent({
-              title: output.titulo,
-              dateTime: output.fechaHoraInicio,
-              durationMinutes: output.duracionMinutos || 60,
+              title: result.titulo,
+              dateTime: result.fechaHoraInicio,
+              durationMinutes: result.duracionMinutos || 60,
               icon: "Calendar",
               color: "bg-indigo-500",
               source: "chat",
             })
-            setProcessedToolCalls(prev => new Set(prev).add(toolCallId))
           }
-        }
 
-        // Handle solicitarContrato tool
-        if (partType === "tool-solicitarContrato" && part.state === "output-available") {
-          const toolCallId = part.toolCallId
-          if (!toolCallId || processedToolCalls.has(toolCallId)) continue
-
-          const output = part.output
-          console.log("[v0] solicitarContrato output:", output)
-
-          if (output?.habito) {
+          if (toolName === "solicitarContrato" && result?.habito) {
+            // Add habit from contract to global state
             addHabit({
-              name: output.habito,
+              name: result.habito,
               icon: "Flame",
               color: "bg-purple-500",
-              ancla: output.ancla,
+              ancla: result.ancla,
             })
-            setProcessedToolCalls(prev => new Set(prev).add(toolCallId))
           }
         }
       }
     }
-  }, [messages, addEvent, addHabit, processedToolCalls])
+  }, [messages, addEvent, addHabit])
 
   return (
     <div className="flex h-dvh flex-col bg-slate-50">

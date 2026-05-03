@@ -2,9 +2,21 @@
 
 import { MessageCircle, Activity, BarChart3, Calendar } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { useI18n } from "@/lib/i18n"
 
 export type TabId = "chat" | "ritmos" | "progreso" | "agenda"
+
+interface Tab {
+  id: TabId
+  label: string
+  icon: React.ReactNode
+}
+
+const tabs: Tab[] = [
+  { id: "chat", label: "Chat", icon: <MessageCircle className="h-4 w-4" /> },
+  { id: "ritmos", label: "Mis Ritmos", icon: <Activity className="h-4 w-4" /> },
+  { id: "progreso", label: "Progreso", icon: <BarChart3 className="h-4 w-4" /> },
+  { id: "agenda", label: "Agenda", icon: <Calendar className="h-4 w-4" /> },
+]
 
 interface TabsNavigationProps {
   activeTab: TabId
@@ -12,17 +24,8 @@ interface TabsNavigationProps {
 }
 
 export function TabsNavigation({ activeTab, onTabChange }: TabsNavigationProps) {
-  const { t } = useI18n()
-
-  const tabs = [
-    { id: "chat" as TabId, labelKey: "chat" as const, icon: <MessageCircle className="h-4 w-4" /> },
-    { id: "ritmos" as TabId, labelKey: "rhythms" as const, icon: <Activity className="h-4 w-4" /> },
-    { id: "progreso" as TabId, labelKey: "progress" as const, icon: <BarChart3 className="h-4 w-4" /> },
-    { id: "agenda" as TabId, labelKey: "agenda" as const, icon: <Calendar className="h-4 w-4" /> },
-  ]
-
   return (
-    <nav className="fixed top-[68px] left-0 right-0 z-40 border-b border-border bg-background">
+    <nav className="fixed top-[68px] left-0 right-0 z-40 border-b border-gray-200 bg-white">
       <div className="mx-auto flex max-w-lg">
         {tabs.map((tab) => (
           <button
@@ -31,12 +34,12 @@ export function TabsNavigation({ activeTab, onTabChange }: TabsNavigationProps) 
             className={cn(
               "flex flex-1 flex-col items-center gap-1 px-2 py-2.5 text-xs font-medium transition-colors",
               activeTab === tab.id
-                ? "border-b-2 border-primary text-primary"
-                : "text-muted-foreground hover:text-foreground"
+                ? "border-b-2 border-indigo-600 text-indigo-600"
+                : "text-gray-500 hover:text-gray-700"
             )}
           >
             {tab.icon}
-            <span>{t(tab.labelKey)}</span>
+            <span>{tab.label}</span>
           </button>
         ))}
       </div>

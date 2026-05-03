@@ -70,84 +70,85 @@ export function ChatArea({ messages, isLoading }: ChatAreaProps) {
               }`}
             >
               {message.parts.map((part, partIndex) => {
-                // Cast to any for flexible type checking in AI SDK 6
-                const typedPart = part as any
-                const partType = typedPart.type as string
-
                 // Render text parts
-                if (partType === "text" && typedPart.text?.trim()) {
+                if (part.type === "text" && part.text?.trim()) {
                   return (
                     <MessageBubble
                       key={`${message.id}-text-${partIndex}`}
-                      text={typedPart.text}
+                      text={part.text}
                       role={message.role}
                     />
                   )
                 }
 
-                // --- crearEvento (AI SDK 6 format: tool-{toolName}) ---
-                if (partType === "tool-crearEvento") {
-                  if (typedPart.state === "input-streaming" || typedPart.state === "input-available") {
-                    return (
-                      <div key={typedPart.toolCallId || partIndex} className="max-w-[85%]">
-                        <div className="animate-pulse overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-                          <div className="h-10 bg-gradient-to-r from-blue-400 to-blue-500" />
-                          <div className="p-4 space-y-3">
-                            <div className="h-4 w-3/4 rounded bg-gray-200" />
-                            <div className="h-3 w-1/2 rounded bg-gray-200" />
-                            <div className="h-3 w-2/3 rounded bg-gray-200" />
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  }
-                  if (typedPart.state === "output-available") {
-                    const data = typedPart.output
-                    return (
-                      <div key={typedPart.toolCallId || partIndex} className="max-w-[85%]">
-                        <CalendarCard
-                          titulo={data.titulo}
-                          fechaHoraInicio={data.fechaHoraInicio}
-                          duracionMinutos={data.duracionMinutos}
-                          link={data.link}
-                          success={data.success}
-                          error={data.error}
-                          demo={data.demo}
-                        />
-                      </div>
-                    )
-                  }
-                }
+                // Render tool invocations (Generative UI)
+                if (part.type === "tool-invocation") {
+                  const { toolInvocation } = part
 
-                // --- solicitarContrato ---
-                if (partType === "tool-solicitarContrato") {
-                  if (typedPart.state === "input-streaming" || typedPart.state === "input-available") {
-                    return (
-                      <div key={typedPart.toolCallId || partIndex} className="w-full max-w-[90%]">
-                        <div className="animate-pulse overflow-hidden rounded-2xl border border-indigo-200 bg-white shadow-lg">
-                          <div className="h-16 bg-gradient-to-br from-indigo-500 to-purple-600" />
-                          <div className="p-5 space-y-4">
-                            <div className="rounded-xl bg-indigo-50 p-4 space-y-2">
-                              <div className="mx-auto h-3 w-1/3 rounded bg-indigo-200" />
-                              <div className="mx-auto h-4 w-3/4 rounded bg-indigo-200" />
-                              <div className="mx-auto h-4 w-2/3 rounded bg-indigo-200" />
+                  // --- crearEvento ---
+                  if (toolInvocation.toolName === "crearEvento") {
+                    if (toolInvocation.state === "call" || toolInvocation.state === "partial-call") {
+                      return (
+                        <div key={toolInvocation.toolCallId} className="max-w-[85%]">
+                          <div className="animate-pulse overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+                            <div className="h-10 bg-gradient-to-r from-blue-400 to-blue-500" />
+                            <div className="p-4 space-y-3">
+                              <div className="h-4 w-3/4 rounded bg-gray-200" />
+                              <div className="h-3 w-1/2 rounded bg-gray-200" />
+                              <div className="h-3 w-2/3 rounded bg-gray-200" />
                             </div>
-                            <div className="h-10 w-full rounded-xl bg-indigo-200" />
                           </div>
                         </div>
-                      </div>
-                    )
+                      )
+                    }
+                    if (toolInvocation.state === "result") {
+                      const data = toolInvocation.result
+                      return (
+                        <div key={toolInvocation.toolCallId} className="max-w-[85%]">
+                          <CalendarCard
+                            titulo={data.titulo}
+                            fechaHoraInicio={data.fechaHoraInicio}
+                            duracionMinutos={data.duracionMinutos}
+                            link={data.link}
+                            success={data.success}
+                            error={data.error}
+                            demo={data.demo}
+                          />
+                        </div>
+                      )
+                    }
                   }
-                  if (typedPart.state === "output-available") {
-                    const data = typedPart.output
-                    return (
-                      <div key={typedPart.toolCallId || partIndex} className="w-full max-w-[90%]">
-                        <HabitContract
-                          habito={data.habito}
-                          ancla={data.ancla}
-                        />
-                      </div>
-                    )
+
+                  // --- solicitarContrato ---
+                  if (toolInvocation.toolName === "solicitarContrato") {
+                    if (toolInvocation.state === "call" || toolInvocation.state === "partial-call") {
+                      return (
+                        <div key={toolInvocation.toolCallId} className="w-full max-w-[90%]">
+                          <div className="animate-pulse overflow-hidden rounded-2xl border border-indigo-200 bg-white shadow-lg">
+                            <div className="h-16 bg-gradient-to-br from-indigo-500 to-purple-600" />
+                            <div className="p-5 space-y-4">
+                              <div className="rounded-xl bg-indigo-50 p-4 space-y-2">
+                                <div className="mx-auto h-3 w-1/3 rounded bg-indigo-200" />
+                                <div className="mx-auto h-4 w-3/4 rounded bg-indigo-200" />
+                                <div className="mx-auto h-4 w-2/3 rounded bg-indigo-200" />
+                              </div>
+                              <div className="h-10 w-full rounded-xl bg-indigo-200" />
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    }
+                    if (toolInvocation.state === "result") {
+                      const data = toolInvocation.result
+                      return (
+                        <div key={toolInvocation.toolCallId} className="w-full max-w-[90%]">
+                          <HabitContract
+                            habito={data.habito}
+                            ancla={data.ancla}
+                          />
+                        </div>
+                      )
+                    }
                   }
                 }
 
