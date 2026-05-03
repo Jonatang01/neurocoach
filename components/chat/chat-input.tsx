@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback, type FormEvent } from "react"
 import { Mic, MicOff, Send } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useAppSettings } from "@/contexts/app-settings"
 
 interface ChatInputProps {
   input: string
@@ -17,11 +18,12 @@ export function ChatInput({
   onSendMessage,
   disabled,
 }: ChatInputProps) {
+  const { t } = useAppSettings()
   const [isListening, setIsListening] = useState(false)
-  const recognitionRef = useRef<SpeechRecognition | null>(null)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const recognitionRef = useRef<any>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  // Listen for suggestion events from ChatArea
   useEffect(() => {
     const handler = (e: Event) => {
       const suggestion = (e as CustomEvent).detail as string
@@ -31,12 +33,11 @@ export function ChatInput({
     return () => window.removeEventListener("neurocoach:suggest", handler)
   }, [onSendMessage])
 
-  // Initialize Web Speech API
   const startListening = useCallback(() => {
-    const SpeechRecognitionAPI =
-      window.SpeechRecognition ||
-      (window as unknown as { webkitSpeechRecognition: typeof window.SpeechRecognition })
-        .webkitSpeechRecognition
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const SpeechRecognitionAPI: any =
+      (window as any).SpeechRecognition ||
+      (window as any).webkitSpeechRecognition
 
     if (!SpeechRecognitionAPI) {
       alert("Tu navegador no soporta reconocimiento de voz. Usa Chrome o Edge.")
@@ -49,19 +50,14 @@ export function ChatInput({
     recognition.maxAlternatives = 1
     recognition.continuous = false
 
-    recognition.onresult = (event: SpeechRecognitionEvent) => {
+    recognition.onresult = (event: any) => {
       const transcript = event.results[0][0].transcript
       setInput(transcript)
       setIsListening(false)
     }
 
-    recognition.onerror = () => {
-      setIsListening(false)
-    }
-
-    recognition.onend = () => {
-      setIsListening(false)
-    }
+    recognition.onerror = () => setIsListening(false)
+    recognition.onend = () => setIsListening(false)
 
     recognitionRef.current = recognition
     recognition.start()
@@ -74,11 +70,8 @@ export function ChatInput({
   }, [])
 
   const handleMicToggle = () => {
-    if (isListening) {
-      stopListening()
-    } else {
-      startListening()
-    }
+    if (isListening) stopListening()
+    else startListening()
   }
 
   const handleSubmit = (e: FormEvent) => {
@@ -89,12 +82,9 @@ export function ChatInput({
   }
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white px-4 py-3">
-      <form
-        onSubmit={handleSubmit}
-        className="mx-auto flex max-w-lg items-center gap-2"
-      >
-        {/* Microphone Button (Push-to-Talk) */}
+    <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-3 transition-colors">
+      <form onSubmit={handleSubmit} className="mx-auto flex max-w-lg items-center gap-2">
+        {/* Microphone */}
         <button
           type="button"
           onClick={handleMicToggle}
@@ -103,16 +93,12 @@ export function ChatInput({
             "flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-all",
             isListening
               ? "bg-red-500 text-white shadow-lg shadow-red-500/30 animate-pulse"
-              : "bg-gray-100 text-gray-600 hover:bg-gray-200",
+              : "bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-700",
             disabled && "opacity-50 cursor-not-allowed"
           )}
-          aria-label={isListening ? "Detener grabación" : "Grabar mensaje de voz"}
+          aria-label={isListening ? t.micStop : t.micStart}
         >
-          {isListening ? (
-            <MicOff className="h-5 w-5" />
-          ) : (
-            <Mic className="h-5 w-5" />
-          )}
+          {isListening ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
         </button>
 
         {/* Text Input */}
@@ -121,17 +107,19 @@ export function ChatInput({
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder={isListening ? "Escuchando..." : "Escribe un mensaje..."}
+          placeholder={isListening ? t.inputListening : t.inputPlaceholder}
           disabled={disabled || isListening}
           className={cn(
-            "h-10 flex-1 rounded-full border border-gray-300 bg-gray-50 px-4 text-sm text-gray-900 placeholder-gray-500",
+            "h-10 flex-1 rounded-full border border-gray-300 dark:border-slate-700",
+            "bg-gray-50 dark:bg-slate-800 px-4 text-sm",
+            "text-gray-900 dark:text-slate-100 placeholder-gray-500 dark:placeholder-slate-500",
             "focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20",
-            "disabled:cursor-not-allowed disabled:opacity-50",
-            isListening && "border-red-300 bg-red-50/50"
+            "disabled:cursor-not-allowed disabled:opacity-50 transition-colors",
+            isListening && "border-red-300 bg-red-50/50 dark:bg-red-950/30"
           )}
         />
 
-        {/* Send Button */}
+        {/* Send */}
         <button
           type="submit"
           disabled={!input.trim() || disabled}
@@ -139,9 +127,9 @@ export function ChatInput({
             "flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-all",
             input.trim()
               ? "bg-indigo-600 text-white hover:bg-indigo-700"
-              : "bg-gray-100 text-gray-400"
+              : "bg-gray-100 dark:bg-slate-800 text-gray-400 dark:text-slate-600"
           )}
-          aria-label="Enviar mensaje"
+          aria-label={t.send}
         >
           <Send className="h-5 w-5" />
         </button>
