@@ -33,6 +33,12 @@ const challengeMessages: Record<Challenge, string> = {
     'Entiendo que el estrés y la ansiedad te afectan. Implementaremos técnicas basadas en neurociencia para calmarte. ¿Qué práctica te gustaría comenzar?',
 }
 
+const quickSuggestions = [
+  'Empezar a meditar cada mañana',
+  'Hacer ejercicio 3 veces por semana',
+  'Leer 20 minutos antes de dormir',
+]
+
 export interface NeuroCoachInterfaceProps {
   challenge: Challenge
   onReset: () => void
@@ -142,6 +148,8 @@ export function NeuroCoachInterface({ challenge, onReset }: NeuroCoachInterfaceP
     })
   }
 
+  const isOnboarding = messages.length === 1 && messages[0].role === 'assistant'
+
   return (
     <div className="flex h-dvh w-full flex-col bg-stone-50 dark:bg-slate-950">
       {/* Header */}
@@ -179,6 +187,38 @@ export function NeuroCoachInterface({ challenge, onReset }: NeuroCoachInterfaceP
       {/* Chat Area */}
       <div className="flex-1 overflow-y-auto">
         <div className="mx-auto max-w-4xl space-y-6 px-6 py-8">
+          {isOnboarding && (
+            <div className="flex flex-col items-center justify-center py-8 text-center">
+              <h2 className="mb-2 text-2xl font-bold text-slate-900 dark:text-slate-50">
+                NeuroCoach: Tu espacio seguro para construir hábitos
+              </h2>
+              <p className="mb-8 text-slate-600 dark:text-slate-400">
+                Basado en la ciencia conductual de James Clear y BJ Fogg
+              </p>
+
+              {/* Quick Suggestion Cards */}
+              <div className="grid w-full gap-3 sm:grid-cols-1">
+                {[
+                  { label: 'Burnout Laboral', value: 'burnout' },
+                  { label: 'Falta de Constancia', value: 'constancy' },
+                  { label: 'Estrés y Ansiedad', value: 'stress' },
+                ].map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => handleSendMessage(option.label)}
+                    className="rounded-lg border-2 border-slate-200 bg-white px-4 py-3 text-left text-sm font-medium text-slate-700 transition-all hover:border-emerald-500 hover:bg-emerald-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-emerald-500 dark:hover:bg-slate-700"
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+
+              <p className="mt-8 text-center text-sm text-slate-500 dark:text-slate-400">
+                Elige una opción arriba o simplemente cuéntame, ¿qué desafío enfrentas hoy?
+              </p>
+            </div>
+          )}
+
           {messages.map((message) => (
             <div key={message.id}>
               {/* Message Bubble */}
@@ -210,7 +250,7 @@ export function NeuroCoachInterface({ challenge, onReset }: NeuroCoachInterfaceP
         </div>
       </div>
 
-      {/* Input Area */}
+      {/* Input Area - Always Visible */}
       <div className="border-t border-slate-200 bg-white px-6 py-4 dark:border-slate-700 dark:bg-slate-900">
         <div className="mx-auto max-w-4xl">
           <div className="flex gap-3">
