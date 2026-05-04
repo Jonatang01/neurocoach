@@ -13,10 +13,8 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguage] = useState<Language>('ES')
-  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    setMounted(true)
     const saved = localStorage.getItem('neurocoach-language') as Language
     if (saved) {
       setLanguage(saved)
@@ -27,8 +25,6 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     setLanguage(lang)
     localStorage.setItem('neurocoach-language', lang)
   }
-
-  if (!mounted) return <>{children}</>
 
   return (
     <LanguageContext.Provider value={{ language, setLanguage: handleSetLanguage }}>
