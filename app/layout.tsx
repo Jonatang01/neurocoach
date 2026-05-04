@@ -8,8 +8,8 @@ const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'NeuroCoach - Tu Coach de Hábitos Inteligente',
-  description: 'Desarrolla hábitos saludables con la ayuda de la neurociencia y tu coach personal de IA',
+  title: 'NeuroCoach - Tu Coach de Hábitos Inteligente | Multilenguaje',
+  description: 'Desarrolla hábitos saludables con la ayuda de la neurociencia y tu coach personal de IA. Disponible en Español e Inglés.',
   generator: 'v0.app',
   icons: {
     icon: [
