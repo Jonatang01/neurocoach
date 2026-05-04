@@ -1,11 +1,29 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, createContext, useContext } from "react"
 import { Brain, Sparkles, Globe, Sun, Moon, Info } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import { useLanguage } from "@/lib/language-context"
+
+// Simple local language hook that persists to localStorage
+function useLocalLanguage() {
+  const [language, setLanguageState] = useState<'ES' | 'EN'>('ES')
+  
+  useEffect(() => {
+    const saved = localStorage.getItem('neurocoach-lang') as 'ES' | 'EN'
+    if (saved) setLanguageState(saved)
+  }, [])
+  
+  const setLanguage = (lang: 'ES' | 'EN') => {
+    setLanguageState(lang)
+    localStorage.setItem('neurocoach-lang', lang)
+    // Dispatch event for other components
+    window.dispatchEvent(new CustomEvent('language-change', { detail: lang }))
+  }
+  
+  return { language, setLanguage }
+}
 
 interface ChatHeaderProps {
   level?: number
@@ -81,7 +99,7 @@ function InlineFAQs({ lang }: { lang: 'ES' | 'EN' }) {
 }
 
 export function ChatHeader({ level = 4, points = 1250 }: ChatHeaderProps) {
-  const { language, setLanguage } = useLanguage()
+  const { language, setLanguage } = useLocalLanguage()
   const [theme, setTheme] = useState<"light" | "dark">("light")
 
   const toggleLanguage = () => {

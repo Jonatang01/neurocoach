@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef, useCallback, type FormEvent } from "react"
 import { Mic, MicOff, Send } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { useLanguage } from "@/lib/language-context"
 
 interface ChatInputProps {
   input: string
@@ -19,9 +18,19 @@ export function ChatInput({
   disabled,
 }: ChatInputProps) {
   const [isListening, setIsListening] = useState(false)
+  const [language, setLanguage] = useState<'ES' | 'EN'>('ES')
   const recognitionRef = useRef<SpeechRecognition | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-  const { language, t } = useLanguage()
+  
+  // Sync language from localStorage and listen for changes
+  useEffect(() => {
+    const saved = localStorage.getItem('neurocoach-lang') as 'ES' | 'EN'
+    if (saved) setLanguage(saved)
+    
+    const handleLangChange = (e: CustomEvent) => setLanguage(e.detail)
+    window.addEventListener('language-change', handleLangChange as EventListener)
+    return () => window.removeEventListener('language-change', handleLangChange as EventListener)
+  }, [])
 
   // Listen for suggestion events from ChatArea
   useEffect(() => {
@@ -125,7 +134,7 @@ export function ChatInput({
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder={isListening ? (language === 'ES' ? "Escuchando..." : "Listening...") : t('chat.inputPlaceholder')}
+          placeholder={isListening ? (language === 'ES' ? "Escuchando..." : "Listening...") : (language === 'ES' ? "Escribe un mensaje..." : "Write a message...")}
           disabled={disabled || isListening}
           className={cn(
             "h-10 flex-1 rounded-full border border-gray-300 bg-gray-50 px-4 text-sm text-gray-900 placeholder-gray-500",

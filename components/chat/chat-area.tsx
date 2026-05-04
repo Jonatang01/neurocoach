@@ -1,11 +1,35 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import type { UIMessage } from "@ai-sdk/react"
 import { MessageBubble } from "./message-bubble"
 import { CalendarCard } from "./calendar-card"
 import { HabitContract } from "@/components/HabitContract"
-import { useLanguage } from "@/lib/language-context"
+
+const translations = {
+  ES: {
+    title: 'NeuroCoach: Tu espacio seguro para construir habitos',
+    subtitle: 'Basado en la ciencia conductual de James Clear y BJ Fogg.',
+    helper: 'Elige una sugerencia o cuentame tu desafio de hoy.',
+    burnout: 'Burnout Laboral',
+    burnoutDesc: 'Recupera tu energia',
+    constancy: 'Falta de Constancia',
+    constancyDesc: 'Crea ritmos sostenibles',
+    stress: 'Estres y Ansiedad',
+    stressDesc: 'Tecnicas basadas en neurociencia',
+  },
+  EN: {
+    title: 'NeuroCoach: Your safe space to build habits',
+    subtitle: 'Based on behavioral science by James Clear and BJ Fogg.',
+    helper: 'Choose a suggestion or tell me your challenge today.',
+    burnout: 'Work Burnout',
+    burnoutDesc: 'Recover your energy',
+    constancy: 'Lack of Consistency',
+    constancyDesc: 'Create sustainable rhythms',
+    stress: 'Stress and Anxiety',
+    stressDesc: 'Science-based techniques',
+  },
+}
 
 interface ChatAreaProps {
   messages: UIMessage[]
@@ -14,7 +38,18 @@ interface ChatAreaProps {
 
 export function ChatArea({ messages, isLoading }: ChatAreaProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const { t } = useLanguage()
+  const [lang, setLang] = useState<'ES' | 'EN'>('ES')
+  
+  useEffect(() => {
+    const saved = localStorage.getItem('neurocoach-lang') as 'ES' | 'EN'
+    if (saved) setLang(saved)
+    
+    const handleLangChange = (e: CustomEvent) => setLang(e.detail)
+    window.addEventListener('language-change', handleLangChange as EventListener)
+    return () => window.removeEventListener('language-change', handleLangChange as EventListener)
+  }, [])
+  
+  const t = translations[lang]
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -33,20 +68,20 @@ export function ChatArea({ messages, isLoading }: ChatAreaProps) {
               <span className="text-3xl">🧠</span>
             </div>
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-              {t('onboarding.title')}
+              {t.title}
             </h2>
             <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-              {t('onboarding.subtitle')}
+              {t.subtitle}
               <br />
-              {t('onboarding.helper')}
+              {t.helper}
             </p>
 
             {/* Quick Suggestion Cards */}
             <div className="mt-8 w-full space-y-2">
               {[
-                { emoji: "💼", label: t('onboarding.burnout'), desc: t('onboarding.burnoutDesc') },
-                { emoji: "⚡", label: t('onboarding.constancy'), desc: t('onboarding.constancyDesc') },
-                { emoji: "😰", label: t('onboarding.stress'), desc: t('onboarding.stressDesc') },
+                { emoji: "💼", label: t.burnout, desc: t.burnoutDesc },
+                { emoji: "⚡", label: t.constancy, desc: t.constancyDesc },
+                { emoji: "😰", label: t.stress, desc: t.stressDesc },
               ].map((card) => (
                 <button
                   key={card.label}
