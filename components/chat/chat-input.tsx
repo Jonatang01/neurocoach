@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback, type FormEvent } from "react"
 import { Mic, MicOff, Send } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useLanguage } from "@/lib/language-context"
 
 interface ChatInputProps {
   input: string
@@ -20,6 +21,7 @@ export function ChatInput({
   const [isListening, setIsListening] = useState(false)
   const recognitionRef = useRef<SpeechRecognition | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const { language, t } = useLanguage()
 
   // Listen for suggestion events from ChatArea
   useEffect(() => {
@@ -39,12 +41,14 @@ export function ChatInput({
         .webkitSpeechRecognition
 
     if (!SpeechRecognitionAPI) {
-      alert("Tu navegador no soporta reconocimiento de voz. Usa Chrome o Edge.")
+      alert(language === 'ES' 
+        ? "Tu navegador no soporta reconocimiento de voz. Usa Chrome o Edge."
+        : "Your browser does not support speech recognition. Use Chrome or Edge.")
       return
     }
 
     const recognition = new SpeechRecognitionAPI()
-    recognition.lang = "es-ES"
+    recognition.lang = language === 'ES' ? "es-ES" : "en-US"
     recognition.interimResults = false
     recognition.maxAlternatives = 1
     recognition.continuous = false
@@ -106,7 +110,7 @@ export function ChatInput({
               : "bg-gray-100 text-gray-600 hover:bg-gray-200",
             disabled && "opacity-50 cursor-not-allowed"
           )}
-          aria-label={isListening ? "Detener grabación" : "Grabar mensaje de voz"}
+          aria-label={isListening ? (language === 'ES' ? "Detener grabación" : "Stop recording") : (language === 'ES' ? "Grabar mensaje de voz" : "Record voice message")}
         >
           {isListening ? (
             <MicOff className="h-5 w-5" />
@@ -121,7 +125,7 @@ export function ChatInput({
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder={isListening ? "Escuchando..." : "Escribe un mensaje..."}
+          placeholder={isListening ? (language === 'ES' ? "Escuchando..." : "Listening...") : t('chat.inputPlaceholder')}
           disabled={disabled || isListening}
           className={cn(
             "h-10 flex-1 rounded-full border border-gray-300 bg-gray-50 px-4 text-sm text-gray-900 placeholder-gray-500",

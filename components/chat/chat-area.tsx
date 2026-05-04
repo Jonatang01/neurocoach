@@ -5,6 +5,7 @@ import type { UIMessage } from "@ai-sdk/react"
 import { MessageBubble } from "./message-bubble"
 import { CalendarCard } from "./calendar-card"
 import { HabitContract } from "@/components/HabitContract"
+import { useLanguage } from "@/lib/language-context"
 
 interface ChatAreaProps {
   messages: UIMessage[]
@@ -13,6 +14,7 @@ interface ChatAreaProps {
 
 export function ChatArea({ messages, isLoading }: ChatAreaProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const { t } = useLanguage()
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -31,20 +33,20 @@ export function ChatArea({ messages, isLoading }: ChatAreaProps) {
               <span className="text-3xl">🧠</span>
             </div>
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-              NeuroCoach: Tu espacio seguro para construir hábitos
+              {t('onboarding.title')}
             </h2>
             <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-              Basado en la ciencia conductual de James Clear y BJ Fogg.
+              {t('onboarding.subtitle')}
               <br />
-              Elige una sugerencia o cuéntame tu desafío de hoy.
+              {t('onboarding.helper')}
             </p>
 
             {/* Quick Suggestion Cards */}
             <div className="mt-8 w-full space-y-2">
               {[
-                { emoji: "💼", label: "Burnout Laboral", desc: "Recupera tu energía" },
-                { emoji: "⚡", label: "Falta de Constancia", desc: "Crea ritmos sostenibles" },
-                { emoji: "😰", label: "Estrés y Ansiedad", desc: "Técnicas basadas en neurociencia" },
+                { emoji: "💼", label: t('onboarding.burnout'), desc: t('onboarding.burnoutDesc') },
+                { emoji: "⚡", label: t('onboarding.constancy'), desc: t('onboarding.constancyDesc') },
+                { emoji: "😰", label: t('onboarding.stress'), desc: t('onboarding.stressDesc') },
               ].map((card) => (
                 <button
                   key={card.label}
